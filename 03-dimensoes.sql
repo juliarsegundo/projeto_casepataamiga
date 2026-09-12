@@ -33,6 +33,33 @@ USE dw_pata_amiga;
 --  ATENCAO: a ordem do CASE importa - "Racao Medicamentosa" e Medicamento, entao
 --  teste MED antes de RA. Compare em UPPER e use trechos SEM acento.
 
+INSERT INTO dim_categoria (sk_categoria, categoria_origem, nome_categoria, grupo_categoria)
+VALUES (-1, 'Nao Informado', 'Nao Informado', 'Nao Informado');
+
+INSERT INTO dim_categoria (categoria_origem, nome_categoria, grupo_categoria)
+SELECT DISTINCT
+    `CategoriaProduto` AS categoria_origem,
+    CASE
+        WHEN UPPER(`CategoriaProduto`) LIKE '%MED%'    THEN 'Medicamento'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%PETISC%' THEN 'Petisco'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%RA%'     THEN 'Racao'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%HIG%'    THEN 'Higiene'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%BRINQ%'  THEN 'Brinquedo'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%ACESS%'  THEN 'Acessorio'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%SERV%'   THEN 'Servico'
+        ELSE 'Nao Informado'
+    END AS nome_categoria,
+    CASE
+        WHEN UPPER(`CategoriaProduto`) LIKE '%MED%'    THEN 'Saude e Higiene'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%PETISC%' THEN 'Alimentacao'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%RA%'     THEN 'Alimentacao'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%HIG%'    THEN 'Saude e Higiene'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%BRINQ%'  THEN 'Bem-estar'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%ACESS%'  THEN 'Bem-estar'
+        WHEN UPPER(`CategoriaProduto`) LIKE '%SERV%'   THEN 'Bem-estar'
+        ELSE 'Nao Informado'
+    END AS grupo_categoria
+FROM stg_pedido;
 
 -- =====================================================================================
 --  DIM_PRACA  +  BRIDGE_LOJA_PRACA
@@ -42,7 +69,17 @@ USE dw_pata_amiga;
 --  de agregacao (MAX serve). domicilios_com_pet vem como '148.000': o ponto e
 --  milhar, tire-o antes do CAST.
 
+INSERT INTO dim_praca (sk_praca, cod_praca, nome_praca, regional, domicilios_com_pet)
+VALUES (-1, 'N/I', 'Nao Informado', 'Nao Informado', NULL);
 
+INSERT INTO dim_praca (cod_praca, nome_praca, regional, domicilios_com_pet)
+SELECT
+    `CodPraca`,
+    MAX(`NomePraca`),
+    MAX(`Regional`),
+    CAST(REPLACE(MAX(`DomiciliosComPet`), '.', '') AS SIGNED)
+FROM stg_loja_praca
+GROUP BY `CodPraca`;
 
 -- -------------------------------------------------------------------------------------
 --  A TABELA PONTE
@@ -51,7 +88,13 @@ USE dw_pata_amiga;
 --  tabela propria, com o FATOR DE RATEIO dentro (os fatores de uma loja somam
 --  1,00). A ponte usa o COD DA LOJA, nao a sk_loja.
 
-
+INSERT INTO bridge_loja_praca (cod_loja, sk_praca, fator_publico)
+SELECT
+    slp.`CodLoja`,
+    dp.sk_praca,
+    CAST(slp.`PercentualPublico` AS DECIMAL(6,4))
+FROM stg_loja_praca slp
+JOIN dim_praca dp ON dp.cod_praca = slp.`CodPraca`;
 
 -- =====================================================================================
 --  Confira o resultado com o 00-conferencia.sql (bloco "DEPOIS DO 03").
