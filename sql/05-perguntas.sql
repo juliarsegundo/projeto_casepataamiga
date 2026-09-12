@@ -18,6 +18,16 @@ USE dw_pata_amiga;
 --  dias_total_ate_entrega e o processo inteiro, nao um dos quatro intervalos.
 
 -- >>> ESCREVA AQUI a consulta da P1
+SELECT
+    dl.porte,
+    AVG(f.dias_integracao_separacao) AS media_integracao_separacao,
+    AVG(f.dias_separacao_nota)       AS media_separacao_nota,
+    AVG(f.dias_nota_despacho)        AS media_nota_despacho,
+    AVG(f.dias_despacho_entrega)     AS media_despacho_entrega,
+    AVG(f.dias_total_ate_entrega)    AS media_total_ate_entrega
+FROM fato_pedido f
+JOIN dim_loja dl ON dl.sk_loja = f.sk_loja
+GROUP BY dl.porte;
 
 
 -- =====================================================================================
@@ -28,7 +38,16 @@ USE dw_pata_amiga;
 --  subconsulta com o faturamento da rede como denominador.
 
 -- >>> ESCREVA AQUI a consulta da P2
-
+SELECT
+    dc.nome_categoria,
+    ROUND(SUM(f.vl_liquido), 2) AS faturamento,
+    ROUND(
+        SUM(f.vl_liquido) / (SELECT SUM(vl_liquido) FROM fato_pedido) * 100
+    , 2) AS percentual_do_total
+FROM fato_pedido f
+JOIN dim_categoria dc ON dc.sk_categoria = f.sk_categoria
+GROUP BY dc.nome_categoria
+ORDER BY faturamento DESC;
 
 -- =====================================================================================
 --  P3 - O DESCONTO FUNCIONA IGUAL EM TODO CANAL?
@@ -39,6 +58,14 @@ USE dw_pata_amiga;
 --  de WHATS.
 
 -- >>> ESCREVA AQUI a consulta da P3
+SELECT
+    canal_pedido,
+    houve_desconto,
+    ROUND(AVG(vl_liquido), 2) AS ticket_medio,
+    COUNT(*) AS qtd_pedidos
+FROM fato_pedido
+GROUP BY canal_pedido, houve_desconto
+ORDER BY canal_pedido, houve_desconto;
 
 
 -- =====================================================================================
@@ -51,6 +78,16 @@ USE dw_pata_amiga;
 --  nao ser contado duas vezes.
 
 -- >>> ESCREVA AQUI a consulta da P4
+SELECT
+    dp.nome_praca,
+    dp.domicilios_com_pet,
+    ROUND(SUM(f.vl_liquido * b.fator_publico), 2) AS faturamento_rateado
+FROM fato_pedido f
+JOIN dim_loja l ON l.sk_loja = f.sk_loja
+JOIN bridge_loja_praca b ON b.cod_loja = l.cod_loja
+JOIN dim_praca dp ON dp.sk_praca = b.sk_praca
+GROUP BY dp.nome_praca, dp.domicilios_com_pet
+ORDER BY faturamento_rateado DESC;
 
 
 -- =====================================================================================
@@ -66,3 +103,27 @@ USE dw_pata_amiga;
 --      itens e valores em branco.
 
 -- >>> ESCREVA AQUI as consultas da P5
+
+SELECT
+    dl.nome_loja,
+    dl.populacao_cidade,
+    ROUND(SUM(f.qt_itens) / (dl.populacao_cidade / 1000), 2) AS itens_por_mil_habitantes,
+    ROUND(AVG(f.dias_total_ate_entrega), 2) AS tempo_medio_entrega
+FROM fato_pedido f
+JOIN dim_loja dl ON dl.sk_loja = f.sk_loja
+WHERE dl.sk_loja <> -1
+GROUP BY dl.nome_loja, dl.populacao_cidade
+ORDER BY itens_por_mil_habitantes DESC;
+
+SELECT
+    dl.faixa_franquia,
+    ROUND(SUM(f.vl_liquido), 2) AS faturamento
+FROM fato_pedido f
+JOIN dim_loja dl ON dl.sk_loja = f.sk_loja
+GROUP BY dl.faixa_franquia
+ORDER BY faturamento DESC;
+
+SELECT 'pedidos sem loja' AS medida, COUNT(*) AS valor FROM fato_pedido WHERE sk_loja = -1
+UNION ALL SELECT 'entregas nao concluidas', COUNT(*) FROM fato_pedido WHERE sk_tempo_entrega = -1
+UNION ALL SELECT 'itens em branco', COUNT(*) FROM fato_pedido WHERE qt_itens IS NULL
+UNION ALL SELECT 'valores em branco', COUNT(*) FROM fato_pedido WHERE vl_liquido IS NULL;
