@@ -17,7 +17,6 @@ USE dw_pata_amiga;
 --  de loja. AVG ignora NULL - por isso a etapa nao cumprida foi gravada como NULL.
 --  dias_total_ate_entrega e o processo inteiro, nao um dos quatro intervalos.
 
--- >>> ESCREVA AQUI a consulta da P1
 SELECT
     dl.porte,
     AVG(f.dias_integracao_separacao) AS media_integracao_separacao,
@@ -37,7 +36,6 @@ GROUP BY dl.porte;
 --  PADRONIZADO (nunca pela grafia crua). O percentual do total usa uma
 --  subconsulta com o faturamento da rede como denominador.
 
--- >>> ESCREVA AQUI a consulta da P2
 SELECT
     dc.nome_categoria,
     ROUND(SUM(f.vl_liquido), 2) AS faturamento,
@@ -57,7 +55,6 @@ ORDER BY faturamento DESC;
 --  Confira se o WhatsApp aparece - se nao, o CASE do arquivo 04 testou APP antes
 --  de WHATS.
 
--- >>> ESCREVA AQUI a consulta da P3
 SELECT
     canal_pedido,
     houve_desconto,
@@ -77,7 +74,6 @@ ORDER BY canal_pedido, houve_desconto;
 --  praca - isso esta certo. Multiplique por b.fator_publico para o faturamento
 --  nao ser contado duas vezes.
 
--- >>> ESCREVA AQUI a consulta da P4
 SELECT
     dp.nome_praca,
     dp.domicilios_com_pet,
@@ -102,7 +98,6 @@ ORDER BY faturamento_rateado DESC;
 --  (c) Meca o que ficou de fora: pedidos sem loja, entregas nao concluidas,
 --      itens e valores em branco.
 
--- >>> ESCREVA AQUI as consultas da P5
 
 SELECT
     dl.nome_loja,
