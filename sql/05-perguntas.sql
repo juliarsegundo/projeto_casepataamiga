@@ -64,6 +64,15 @@ FROM fato_pedido
 GROUP BY canal_pedido, houve_desconto
 ORDER BY canal_pedido, houve_desconto;
 
+-- quanto cada canal representa do faturamento da rede
+SELECT
+    canal_pedido,
+    ROUND(SUM(vl_liquido)) AS faturamento,
+    ROUND(SUM(vl_liquido) / (SELECT SUM(vl_liquido) FROM fato_pedido) * 100, 2) AS percentual_do_total
+FROM fato_pedido
+GROUP BY canal_pedido
+ORDER BY faturamento DESC;
+
 
 -- =====================================================================================
 --  P4 - QUAL PRACA DE ATENDIMENTO CONCENTRA O FATURAMENTO?
