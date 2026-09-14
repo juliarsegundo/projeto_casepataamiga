@@ -99,4 +99,5 @@ c) O que ficou de fora: 3 pedidos sem loja identificada, 1.953 entregas ainda em
 
 ## Vídeo
 
-[link drive]
+Link drive: https://drive.google.com/file/d/1DIIjNFuLVgNLDI1kSMcEgCAk989aGt6Z/view?usp=sharing
+Por: Julia Rafaela Ramos Segundo
